@@ -1,0 +1,5 @@
+name: HyperingEconomyExtender
+main: amata1219.hypering.economy.extender.HyperingEconomyExtender
+version: 1.0.0
+api-version: 1.13
+author: amata1219(Twitter@amata1219)

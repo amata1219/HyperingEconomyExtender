@@ -16,3 +16,8 @@ Blocks:
   REDSTONE_ORE: 300
   GLOWING_REDSTONE_ORE: 300
   QUARTZ_ORE: 300
+UpperLimit:
+  Normal: 9
+  Slime: 12
+  Guardian: 18
+  Pigman: 10

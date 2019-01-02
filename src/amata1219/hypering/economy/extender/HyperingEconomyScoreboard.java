@@ -7,6 +7,8 @@ import java.util.Map;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
+import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.scoreboard.DisplaySlot;
 import org.bukkit.scoreboard.Objective;
 import org.bukkit.scoreboard.Scoreboard;
@@ -23,10 +25,35 @@ public class HyperingEconomyScoreboard {
 	private final Map<Long, Integer> map = new LinkedHashMap<>(12);
 	//ms, money
 
-	public HyperingEconomyScoreboard(final Player player){
+	private final BukkitTask task;
+
+	public HyperingEconomyScoreboard(final Player player, final String title){
 		this.player = player;
 		this.board = Bukkit.getScoreboardManager().getNewScoreboard();
-		this.objective = this.board.registerNewObjective("HEScoreboard", "dummy", ChatColor.AQUA + "稼ぎ人ボード");
+		this.objective = this.board.registerNewObjective("HEScoreboard", "dummy", title);
+
+		task = new BukkitRunnable(){
+			@Override
+			public void run(){
+				Scoreboard sboard = player.getScoreboard();
+				if(sboard != board)
+					return;
+
+				if(System.currentTimeMillis() - map.keySet().stream().max(Comparator.reverseOrder()).get() > 5000)
+					sboard.clearSlot(DisplaySlot.SIDEBAR);
+			}
+		}.runTaskTimer(HyperingEconomyExtender.getPlugin(), 0, 6000);
+	}
+
+	public void display(){
+		Scoreboard sboard = player.getScoreboard();
+		if(sboard != null && sboard != board){
+			if(sboard.getObjectives().stream().filter(obj -> obj.getDisplaySlot() == DisplaySlot.SIDEBAR).count()> 0)
+				return;
+		}
+
+		update();
+		player.setScoreboard(board);
 	}
 
 	public void update(){
@@ -74,6 +101,10 @@ public class HyperingEconomyScoreboard {
 			return 0L;
 
 		return map.keySet().stream().reduce(0L, Long::sum) / map.values().stream().reduce(0, Integer::sum);
+	}
+
+	public void unload(){
+		task.cancel();
 	}
 
 }
