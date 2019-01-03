@@ -3,6 +3,7 @@ package amata1219.hypering.economy.extender;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -39,16 +40,21 @@ public class HyperingEconomyScoreboard {
 				if(sboard != board)
 					return;
 
-				if(System.currentTimeMillis() - map.keySet().stream().max(Comparator.reverseOrder()).get() > 5000)
+				if(map.isEmpty())
+					return;
+
+				if(System.currentTimeMillis() - map.keySet().stream().max(Comparator.naturalOrder()).get() > 5000){
+					map.clear();
 					sboard.clearSlot(DisplaySlot.SIDEBAR);
+				}
 			}
-		}.runTaskTimer(HyperingEconomyExtender.getPlugin(), 0, 6000);
+		}.runTaskTimer(HyperingEconomyExtender.getPlugin(), 0, 150);
 	}
 
 	public void display(){
 		Scoreboard sboard = player.getScoreboard();
 		if(sboard != null && sboard != board){
-			if(sboard.getObjectives().stream().filter(obj -> obj.getDisplaySlot() == DisplaySlot.SIDEBAR).count()> 0)
+			if(sboard.getObjectives().stream().filter(obj -> obj.getDisplaySlot() == DisplaySlot.SIDEBAR).count() > 0)
 				return;
 		}
 
@@ -59,13 +65,13 @@ public class HyperingEconomyScoreboard {
 	public void update(){
 		board.getEntries().forEach(entry -> board.resetScores(entry));
 
-		set(ChatColor.RED + "所持金: " + SQL.getSQL().getMoney(player.getUniqueId()), 14);
-		set(ChatColor.RED + "増加量: + ¥" + increasePerSecond() + "/s", 13);
-		set("", 12);
+		set(ChatColor.RED + "所持金: ¥" + SQL.getSQL().getMoney(player.getUniqueId()), 15);
+		set(ChatColor.RED + "増加量: + ¥" + increasePerSecond() + "/s", 14);
+		set("", 13);
 
-		Int i = new Int(12 - map.size());
+		AtomicInteger i = new AtomicInteger(12);
 
-		map.forEach((k, v) -> set(ChatColor.GRAY + "+" + v, i.increaseAndGet()));
+		map.forEach((k, v) -> set(ChatColor.GRAY + "+" + v + getSpace(i.get()), i.getAndDecrement()));
 
 		objective.setDisplaySlot(DisplaySlot.SIDEBAR);
 	}
@@ -74,19 +80,15 @@ public class HyperingEconomyScoreboard {
 		objective.getScore(key).setScore(value);
 	}
 
-	class Int {
+	private final StringBuilder builder = new StringBuilder();
 
-		private int i;
+	private String getSpace(int length){
+		builder.setLength(0);
 
-		public Int(int i){
-			this.i = i;
-		}
+		for(int i = 0; i < length; i++)
+			builder.append(" ");
 
-		public int increaseAndGet(){
-			i++;
-			return i;
-		}
-
+		return builder.toString();
 	}
 
 	public void add(int money){
@@ -96,11 +98,14 @@ public class HyperingEconomyScoreboard {
 		map.put(System.currentTimeMillis(), money);
 	}
 
-	public long increasePerSecond(){
+	public int increasePerSecond(){
 		if(map.isEmpty())
-			return 0L;
+			return 0;
 
-		return map.keySet().stream().reduce(0L, Long::sum) / map.values().stream().reduce(0, Integer::sum);
+		if(map.size() == 1)
+			return map.values().stream().max(Comparator.naturalOrder()).get().intValue();
+
+		return Double.valueOf(map.values().stream().mapToInt(i -> i.intValue()).sum() / (Long.valueOf(map.keySet().stream().max(Comparator.naturalOrder()).get().longValue() - map.keySet().stream().min(Comparator.naturalOrder()).get().longValue()).intValue() / 1000D)).intValue();
 	}
 
 	public void unload(){

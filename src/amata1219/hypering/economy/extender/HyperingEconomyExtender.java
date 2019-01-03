@@ -144,7 +144,7 @@ public class HyperingEconomyExtender extends JavaPlugin implements Listener {
 		if(((LivingEntity) entity).getHealth() > e.getDamage())
 			return;
 
-		if(entity.hasMetadata("HyperingEconomy:MobKill"))
+		if(entity.hasMetadata("HEE:TT"))
 			return;
 
 		Player player = ((Player) damager);
@@ -242,7 +242,7 @@ public class HyperingEconomyExtender extends JavaPlugin implements Listener {
 	}
 
 	private void applyMeta(LivingEntity entity){
-		entity.setMetadata("HyperingEconomy:MobKill", new FixedMetadataValue(this, this));
+		entity.setMetadata("HEE:TT", new FixedMetadataValue(this, this));
 	}
 
 }
